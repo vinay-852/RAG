@@ -16,16 +16,16 @@ End-to-end challenge implementation for secure, role-aware retrieval across ente
 
 ## Embeddings
 
-Embeddings default to the Groq-compatible OpenAI API path:
+Embeddings default to Gemini:
 
 ```bash
-EMBEDDING_PROVIDER=groq
-EMBEDDING_MODEL=nomic-embed-text-v1.5
-GROQ_API_KEY=your_groq_key
-GROQ_BASE_URL=https://api.groq.com/openai/v1
+GEMINI_API_KEY=your_gemini_key
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+EMBEDDING_PROVIDER=gemini
+EMBEDDING_MODEL=models/gemini-embedding-2
 ```
 
-`grqoq` is accepted as an alias for `groq`. If `GROQ_API_KEY` is not set, the app uses deterministic local embeddings so the demo can still ingest and run offline. Returned vectors are padded or truncated to `EMBEDDING_DIMENSIONS` so they fit the Postgres `vector(1536)` column.
+If `GEMINI_API_KEY` is not set or the provider call fails, the app uses deterministic local embeddings so the demo can still ingest and run offline. Returned vectors are padded or truncated to `EMBEDDING_DIMENSIONS` so they fit the Postgres `vector(1536)` column.
 
 ## Quick Start
 

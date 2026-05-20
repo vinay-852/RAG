@@ -15,7 +15,10 @@ class Settings:
         "postgresql://rag_app:rag_app@localhost:5432/enterprise_rag",
     )
     openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
-    llm_api_key: str | None = os.getenv("LLM_API_KEY") or os.getenv("OPENAI_API_KEY")
+    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY")
+    gemini_base_url: str = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
+    llm_provider: str = os.getenv("LLM_PROVIDER", "oca").lower()
+    llm_api_key: str | None = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
     llm_base_url: str = os.getenv(
         "LLM_BASE_URL",
         "https://code-internal.aiservice.us-chicago-1.oci.oraclecloud.com/20250206/app/litellm",
@@ -25,13 +28,11 @@ class Settings:
     llm_client_name: str = os.getenv("LLM_CLIENT_NAME", "codex-cli")
     llm_client_version: str = os.getenv("LLM_CLIENT_VERSION", "0")
     chat_model: str = os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini")
-    embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "groq").lower()
+    embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "gemini").lower()
     embedding_model: str = os.getenv(
         "EMBEDDING_MODEL",
-        os.getenv("GROQ_EMBEDDING_MODEL", os.getenv("OPENAI_EMBEDDING_MODEL", "nomic-embed-text-v1.5")),
+        os.getenv("GEMINI_EMBEDDING_MODEL", os.getenv("OPENAI_EMBEDDING_MODEL", "models/gemini-embedding-2")),
     )
-    groq_api_key: str | None = os.getenv("GROQ_API_KEY")
-    groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
     embedding_dimensions: int = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "1200"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "150"))

@@ -11,39 +11,67 @@ class Embedder:
         self._client = self._build_client()
 
     def embed(self, text: str) -> list[float]:
+        if settings.embedding_provider == "gemini" and settings.gemini_api_key:
+            return self._gemini_embed(text)
         if self._client:
-            response = self._client.embeddings.create(
-                model=settings.embedding_model,
-                input=text,
-            )
-            return self._fit_dimensions(response.data[0].embedding)
+            try:
+                response = self._client.embeddings.create(
+                    model=settings.embedding_model,
+                    input=text,
+                )
+                return self._fit_dimensions(response.data[0].embedding)
+            except Exception as exc:
+                print(f"Embedding provider failed; using local fallback: {exc}")
         return self._local_embedding(text)
 
     def embed_many(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
+        if settings.embedding_provider == "gemini" and settings.gemini_api_key:
+            return [self._gemini_embed(text) for text in texts]
         if self._client:
-            response = self._client.embeddings.create(
-                model=settings.embedding_model,
-                input=texts,
-            )
-            return [self._fit_dimensions(item.embedding) for item in response.data]
+            try:
+                response = self._client.embeddings.create(
+                    model=settings.embedding_model,
+                    input=texts,
+                )
+                return [self._fit_dimensions(item.embedding) for item in response.data]
+            except Exception as exc:
+                print(f"Embedding provider failed; using local fallback: {exc}")
         return [self._local_embedding(text) for text in texts]
 
     def _build_client(self):
-        provider = settings.embedding_provider
-        if provider in {"groq", "grqoq"} and settings.groq_api_key:
-            from openai import OpenAI
-
-            return OpenAI(
-                api_key=settings.groq_api_key,
-                base_url=settings.groq_base_url.rstrip("/"),
-            )
         if settings.openai_api_key:
             from openai import OpenAI
 
             return OpenAI(api_key=settings.openai_api_key)
         return None
+
+    def _gemini_embed(self, text: str) -> list[float]:
+        import requests
+
+        model = settings.embedding_model.removeprefix("models/")
+        model_path = f"models/{model}"
+        url = f"{settings.gemini_base_url.rstrip('/')}/{model_path}:embedContent"
+        response = requests.post(
+            url,
+            headers={
+                "Content-Type": "application/json",
+                "X-goog-api-key": settings.gemini_api_key or "",
+            },
+            json={
+                "model": model_path,
+                "content": {"parts": [{"text": text}]},
+                "outputDimensionality": settings.embedding_dimensions,
+            },
+            timeout=60,
+        )
+        try:
+            response.raise_for_status()
+            return self._fit_dimensions(response.json()["embedding"]["values"])
+        except Exception as exc:
+            print(f"Gemini embedding failed; using local fallback: {exc}")
+            return self._local_embedding(text)
 
     def _fit_dimensions(self, embedding: list[float]) -> list[float]:
         dims = settings.embedding_dimensions

@@ -33,6 +33,12 @@ def uses_oca_adapter() -> bool:
     return model.startswith("oca/") or "oraclecloud.com" in base_url or "/app/litellm" in base_url
 
 
+def uses_gemini_adapter() -> bool:
+    model = settings.llm_model.lower()
+    base_url = settings.llm_base_url.lower()
+    return settings.llm_provider == "gemini" or model.startswith("gemini") or "generativelanguage.googleapis.com" in base_url
+
+
 def markitdown_llm_client():
     from openai import OpenAI
 
@@ -100,7 +106,32 @@ def normal_completion(messages: list[dict[str, str]]) -> str:
     return response.output_text
 
 
+def gemini_completion(messages: list[dict[str, str]]) -> str:
+    import requests
+
+    text = "\n\n".join(f"{message['role'].upper()}:\n{message['content']}" for message in messages)
+    url = f"{settings.llm_base_url.rstrip('/')}/models/{settings.llm_model}:generateContent"
+    response = requests.post(
+        url,
+        headers={
+            "Content-Type": "application/json",
+            "X-goog-api-key": settings.llm_api_key or "",
+        },
+        json={"contents": [{"parts": [{"text": text}]}]},
+        timeout=120,
+    )
+    response.raise_for_status()
+    data = response.json()
+    return "".join(
+        part.get("text", "")
+        for candidate in data.get("candidates", [])
+        for part in candidate.get("content", {}).get("parts", [])
+    ).strip()
+
+
 def completion(messages: list[dict[str, str]]) -> str:
+    if uses_gemini_adapter():
+        return gemini_completion(messages)
     if uses_oca_adapter():
         return oca_completion(messages)
     return normal_completion(messages)
