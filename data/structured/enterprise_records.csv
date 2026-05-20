@@ -1,0 +1,6 @@
+tenant_id,record_type,business_unit,owner_department,fiscal_quarter,status,amount,summary,allowed_roles
+acme,contract,Cloud Platform,Finance,2025-Q4,pending_approval,420000,Cloud infrastructure renewal awaits executive approval,finance|executive
+acme,invoice,Security Operations,Finance,2025-Q4,approved,86000,Emergency remediation invoice approved after incident INC-4472,finance|security|executive
+acme,project,Customer Support,Operations,2026-Q1,active,125000,Support workflow modernization is on track for regional rollout,employee|executive
+acme,risk,Identity Platform,Security,2026-Q1,open,0,Privileged access review found stale contractor assignments,security|compliance|executive
+acme,control,Procurement,Compliance,2025-Q4,remediated,0,Vendor onboarding evidence gap remediated with new approval checkpoint,compliance|executive

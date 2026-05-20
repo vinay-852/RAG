@@ -1,0 +1,6 @@
+{
+  "title": "Security Access Policy",
+  "tenant_id": "acme",
+  "classification": "internal",
+  "allowed_roles": ["employee", "security", "compliance"]
+}

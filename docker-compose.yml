@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: enterprise-rag-postgres
+    environment:
+      POSTGRES_DB: enterprise_rag
+      POSTGRES_USER: rag_app
+      POSTGRES_PASSWORD: rag_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag_app -d enterprise_rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: enterprise-rag-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://rag_app:rag_app@postgres:5432/enterprise_rag
+      LLM_BASE_URL: https://code-internal.aiservice.us-chicago-1.oci.oraclecloud.com/20250206/app/litellm
+      LLM_COMPLETIONS_PATH: ${LLM_COMPLETIONS_PATH:-chat/completions}
+      LLM_MODEL: ${LLM_MODEL:-oca/gpt5}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_CLIENT_NAME: codex-cli
+      LLM_CLIENT_VERSION: "0"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_DIMENSIONS: "1536"
+      CORS_ORIGIN: "*"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

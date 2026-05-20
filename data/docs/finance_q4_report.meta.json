@@ -1,0 +1,6 @@
+{
+  "title": "Finance Q4 Risk Report",
+  "tenant_id": "acme",
+  "classification": "confidential",
+  "allowed_roles": ["finance", "executive"]
+}

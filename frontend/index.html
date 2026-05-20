@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Enterprise RAG Intelligence</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Enterprise RAG Intelligence</p>
+            <h1>Secure multi-source assistant</h1>
+          </div>
+          <label class="user-picker">
+            <span>User</span>
+            <select id="userSelect"></select>
+          </label>
+        </header>
+
+        <section class="query-panel">
+          <form id="queryForm">
+            <textarea
+              id="question"
+              rows="4"
+              placeholder="Ask about finance records, security logs, audit changes, or policy documents..."
+            ></textarea>
+            <div class="actions">
+              <button type="button" class="ghost" data-example="Which reports mention access control exceptions?">Docs</button>
+              <button type="button" class="ghost" data-example="Count authorized records by status">SQL</button>
+              <button type="button" class="ghost" data-example="Show recent security alerts for payment services">Logs</button>
+              <button type="button" class="ghost" data-example="Who changed vendor access policies?">Audit</button>
+              <button type="submit" id="askButton">Ask</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="answer-grid">
+          <article class="answer-panel">
+            <div class="panel-header">
+              <h2>Answer</h2>
+              <span id="routeBadge">idle</span>
+            </div>
+            <pre id="answer">Ingest data, choose a user, and ask a question.</pre>
+          </article>
+
+          <aside class="trace-panel">
+            <div class="panel-header">
+              <h2>Trace</h2>
+              <span id="confidence">0.00</span>
+            </div>
+            <dl>
+              <dt>User</dt>
+              <dd id="traceUser">-</dd>
+              <dt>Roles</dt>
+              <dd id="traceRoles">-</dd>
+              <dt>Router</dt>
+              <dd id="traceRoute">-</dd>
+            </dl>
+          </aside>
+        </section>
+
+        <section class="sources-panel">
+          <div class="panel-header">
+            <h2>Authorized Sources</h2>
+            <span id="sourceCount">0</span>
+          </div>
+          <div id="sources" class="sources"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

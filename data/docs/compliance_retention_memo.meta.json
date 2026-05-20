@@ -1,0 +1,6 @@
+{
+  "title": "Compliance Retention Memo",
+  "tenant_id": "acme",
+  "classification": "restricted",
+  "allowed_roles": ["compliance", "executive"]
+}
