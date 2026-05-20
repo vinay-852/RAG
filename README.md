@@ -46,6 +46,18 @@ client-version: 0
 
 Streaming responses are parsed from `data:` lines in `backend/llm_client.py`, accumulating `choices[0].delta.content` until `[DONE]`.
 
+MarkItDown uses the same configured model/client for image descriptions during ingestion:
+
+```python
+MarkItDown(
+    enable_plugins=True,
+    llm_client=markitdown_llm_client(),
+    llm_model=settings.llm_model,
+)
+```
+
+With the default `.env`, that means image descriptions also use `oca/gpt5` through the Oracle/LiteLLM gateway.
+
 For normal OpenAI generation, set a non-OCA model and do not point `LLM_BASE_URL` at the Oracle gateway:
 
 ```bash

@@ -14,6 +14,7 @@ from pgvector.psycopg import register_vector
 from .config import ROOT_DIR, settings
 from .db import get_conn, run_schema
 from .embeddings import embedder
+from .llm_client import markitdown_llm_client
 
 
 def _splitter() -> RecursiveCharacterTextSplitter:
@@ -79,7 +80,12 @@ def load_documents(path: Path) -> list[Document]:
             continue
         metadata = json.loads(file_path.with_suffix(".meta.json").read_text()) if file_path.with_suffix(".meta.json").exists() else {}
         if MarkItDown:
-            result = MarkItDown(enable_plugins=True).convert(str(file_path))
+            md = MarkItDown(
+                enable_plugins=True,
+                llm_client=markitdown_llm_client(),
+                llm_model=settings.llm_model,
+            )
+            result = md.convert(str(file_path))
             content = result.text_content
         else:
             content = file_path.read_text(errors="ignore")

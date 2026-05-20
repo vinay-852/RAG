@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 from urllib.parse import urljoin
 
-import requests
-from openai import OpenAI
-
 from .config import settings
 
 
@@ -26,10 +23,29 @@ def _chat_completions_url() -> str:
     return urljoin(base, settings.llm_completions_path.lstrip("/"))
 
 
+def _api_key() -> str:
+    return settings.llm_api_key or settings.openai_api_key or "not-required"
+
+
 def uses_oca_adapter() -> bool:
     model = settings.llm_model.lower()
     base_url = settings.llm_base_url.lower()
     return model.startswith("oca/") or "oraclecloud.com" in base_url or "/app/litellm" in base_url
+
+
+def markitdown_llm_client():
+    from openai import OpenAI
+
+    if uses_oca_adapter():
+        return OpenAI(
+            api_key=_api_key(),
+            base_url=settings.llm_base_url.rstrip("/"),
+            default_headers={
+                "client": settings.llm_client_name,
+                "client-version": settings.llm_client_version,
+            },
+        )
+    return OpenAI(api_key=_api_key())
 
 
 def parse_streaming_completion(completion: str) -> str:
@@ -49,6 +65,8 @@ def parse_streaming_completion(completion: str) -> str:
 
 
 def oca_completion(messages: list[dict[str, str]]) -> str:
+    import requests
+
     payload = {
         "model": settings.llm_model,
         "messages": messages,
@@ -72,6 +90,8 @@ def oca_completion(messages: list[dict[str, str]]) -> str:
 
 
 def normal_completion(messages: list[dict[str, str]]) -> str:
+    from openai import OpenAI
+
     client = OpenAI(api_key=settings.llm_api_key)
     response = client.responses.create(
         model=settings.llm_model or settings.chat_model,
