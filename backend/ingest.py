@@ -85,9 +85,16 @@ def load_documents(path: Path) -> list[Document]:
                 llm_client=markitdown_llm_client(),
                 llm_model=settings.llm_model,
             )
-            result = md.convert(str(file_path))
-            content = result.text_content
+            try:
+                result = md.convert(str(file_path))
+                content = result.text_content
+            except Exception as exc:
+                print(f"Skipping {file_path}: MarkItDown conversion failed: {exc}")
+                continue
         else:
+            if file_path.suffix.lower() not in {".md", ".txt", ".csv", ".json", ".jsonl"}:
+                print(f"Skipping {file_path}: MarkItDown is not installed")
+                continue
             content = file_path.read_text(errors="ignore")
         docs.append(
             Document(
