@@ -17,6 +17,31 @@ from .embeddings import embedder
 from .llm_client import markitdown_llm_client
 
 
+STRUCTURED_COLUMNS = {
+    "record_type",
+    "business_unit",
+    "owner_department",
+    "status",
+    "summary",
+}
+EVENT_COLUMNS = {"event_type", "event_ts", "message"}
+DOCUMENT_SUFFIXES = {
+    ".csv",
+    ".doc",
+    ".docx",
+    ".html",
+    ".htm",
+    ".json",
+    ".md",
+    ".pdf",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".xls",
+    ".xlsx",
+}
+
+
 def _splitter() -> RecursiveCharacterTextSplitter:
     return RecursiveCharacterTextSplitter(
         chunk_size=settings.chunk_size,
@@ -28,6 +53,60 @@ def _roles(value: str | list[str]) -> list[str]:
     if isinstance(value, list):
         return value
     return [item.strip() for item in value.split("|") if item.strip()]
+
+
+def _data_files(root: Path) -> list[Path]:
+    return sorted(
+        file_path
+        for file_path in root.rglob("*")
+        if file_path.is_file() and not file_path.name.endswith(".meta.json")
+    )
+
+
+def _sidecar_metadata(file_path: Path) -> dict[str, Any]:
+    meta_path = file_path.with_suffix(".meta.json")
+    if not meta_path.exists():
+        return {}
+    return json.loads(meta_path.read_text())
+
+
+def _csv_headers(file_path: Path) -> set[str]:
+    try:
+        with file_path.open(newline="") as handle:
+            reader = csv.DictReader(handle)
+            return set(reader.fieldnames or [])
+    except Exception:
+        return set()
+
+
+def _jsonl_first_record(file_path: Path) -> dict[str, Any]:
+    try:
+        with file_path.open() as handle:
+            for line in handle:
+                if line.strip():
+                    return json.loads(line)
+    except Exception:
+        return {}
+    return {}
+
+
+def discover_data_sources(root: Path) -> tuple[list[Path], list[Path], list[Path]]:
+    document_files: list[Path] = []
+    structured_files: list[Path] = []
+    event_files: list[Path] = []
+
+    for file_path in _data_files(root):
+        suffix = file_path.suffix.lower()
+        if suffix == ".csv" and STRUCTURED_COLUMNS.issubset(_csv_headers(file_path)):
+            structured_files.append(file_path)
+        elif suffix == ".jsonl" and EVENT_COLUMNS.issubset(set(_jsonl_first_record(file_path))):
+            event_files.append(file_path)
+        elif suffix in DOCUMENT_SUFFIXES or suffix == ".jsonl":
+            document_files.append(file_path)
+        else:
+            print(f"Skipping {file_path}: unsupported data file type")
+
+    return document_files, structured_files, event_files
 
 
 def seed_identity() -> None:
@@ -68,17 +147,18 @@ def seed_identity() -> None:
         conn.commit()
 
 
-def load_documents(path: Path) -> list[Document]:
+def load_documents(path: Path, files: list[Path] | None = None) -> list[Document]:
     docs: list[Document] = []
     try:
         from markitdown import MarkItDown
     except Exception:
         MarkItDown = None
 
-    for file_path in sorted(path.glob("*")):
+    document_files = files or _data_files(path)
+    for file_path in document_files:
         if file_path.is_dir() or file_path.name.endswith(".meta.json"):
             continue
-        metadata = json.loads(file_path.with_suffix(".meta.json").read_text()) if file_path.with_suffix(".meta.json").exists() else {}
+        metadata = _sidecar_metadata(file_path)
         if MarkItDown:
             md = MarkItDown(
                 enable_plugins=True,
@@ -112,8 +192,10 @@ def load_documents(path: Path) -> list[Document]:
     return docs
 
 
-def ingest_documents(path: Path) -> int:
-    docs = load_documents(path)
+def ingest_documents(path: Path, files: list[Path] | None = None) -> int:
+    docs = load_documents(path, files)
+    if not docs:
+        return 0
     chunks = _splitter().split_documents(docs)
     texts = [chunk.page_content for chunk in chunks]
     embeddings = embedder.embed_many(texts)
@@ -170,10 +252,11 @@ def ingest_documents(path: Path) -> int:
     return len(chunks)
 
 
-def ingest_structured(path: Path) -> int:
+def ingest_structured(path: Path, files: list[Path] | None = None) -> int:
     count = 0
+    csv_files = files or sorted(path.glob("*.csv"))
     with get_conn() as conn:
-        for csv_path in sorted(path.glob("*.csv")):
+        for csv_path in csv_files:
             with csv_path.open(newline="") as handle:
                 for row in csv.DictReader(handle):
                     conn.execute(
@@ -200,10 +283,11 @@ def ingest_structured(path: Path) -> int:
     return count
 
 
-def ingest_events(path: Path) -> int:
+def ingest_events(path: Path, files: list[Path] | None = None) -> int:
     count = 0
     docs: list[Document] = []
-    for jsonl_path in sorted(path.glob("*.jsonl")):
+    event_files = files or sorted(path.glob("*.jsonl"))
+    for jsonl_path in event_files:
         loader = JSONLoader(
             file_path=str(jsonl_path),
             jq_schema=".",
@@ -286,9 +370,17 @@ def main() -> None:
     seed_identity()
     if args.reset:
         reset_data()
-    doc_count = ingest_documents(ROOT_DIR / "data" / "docs")
-    record_count = ingest_structured(ROOT_DIR / "data" / "structured")
-    event_count = ingest_events(ROOT_DIR / "data" / "events")
+    data_root = ROOT_DIR / "data"
+    document_files, structured_files, event_files = discover_data_sources(data_root)
+    print(
+        "Discovered "
+        f"{len(document_files)} document files, "
+        f"{len(structured_files)} structured files, "
+        f"{len(event_files)} event files under {data_root}"
+    )
+    doc_count = ingest_documents(data_root, document_files)
+    record_count = ingest_structured(data_root, structured_files)
+    event_count = ingest_events(data_root, event_files)
     print(f"Ingested {doc_count} chunks, {record_count} records, {event_count} events")
 
 
