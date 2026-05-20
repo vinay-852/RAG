@@ -14,6 +14,19 @@ End-to-end challenge implementation for secure, role-aware retrieval across ente
 - Offline deterministic embeddings and extractive answers when no API key is set, so the demo still runs.
 - FastAPI backend and a compact browser UI with route trace, confidence, and authorized sources.
 
+## Embeddings
+
+Embeddings default to the Groq-compatible OpenAI API path:
+
+```bash
+EMBEDDING_PROVIDER=groq
+EMBEDDING_MODEL=nomic-embed-text-v1.5
+GROQ_API_KEY=your_groq_key
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+```
+
+`grqoq` is accepted as an alias for `groq`. If `GROQ_API_KEY` is not set, the app uses deterministic local embeddings so the demo can still ingest and run offline. Returned vectors are padded or truncated to `EMBEDDING_DIMENSIONS` so they fit the Postgres `vector(1536)` column.
+
 ## Quick Start
 
 ```bash

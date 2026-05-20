@@ -25,7 +25,13 @@ class Settings:
     llm_client_name: str = os.getenv("LLM_CLIENT_NAME", "codex-cli")
     llm_client_version: str = os.getenv("LLM_CLIENT_VERSION", "0")
     chat_model: str = os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini")
-    embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+    embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "groq").lower()
+    embedding_model: str = os.getenv(
+        "EMBEDDING_MODEL",
+        os.getenv("GROQ_EMBEDDING_MODEL", os.getenv("OPENAI_EMBEDDING_MODEL", "nomic-embed-text-v1.5")),
+    )
+    groq_api_key: str | None = os.getenv("GROQ_API_KEY")
+    groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
     embedding_dimensions: int = int(os.getenv("EMBEDDING_DIMENSIONS", "1536"))
     chunk_size: int = int(os.getenv("CHUNK_SIZE", "1200"))
     chunk_overlap: int = int(os.getenv("CHUNK_OVERLAP", "150"))
