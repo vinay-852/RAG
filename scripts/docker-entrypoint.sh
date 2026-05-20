@@ -21,5 +21,10 @@ for attempt in range(60):
         time.sleep(2)
 PY
 
-python -m backend.ingest --reset
-exec uvicorn backend.app:app --host 0.0.0.0 --port 8000
+filter_optional_dependency_noise() {
+    grep -v "Skipping pci_bus_id for PCI path" \
+        | grep -v "Couldn't find ffmpeg or avconv"
+}
+
+python -m backend.ingest --reset 2> >(filter_optional_dependency_noise >&2)
+exec uvicorn backend.app:app --host 0.0.0.0 --port 8000 2> >(filter_optional_dependency_noise >&2)
