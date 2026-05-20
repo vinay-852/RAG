@@ -4,73 +4,149 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Enterprise RAG Intelligence</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/styles.css" onerror="this.onerror=null;this.href='./styles.css';" />
   </head>
   <body>
-    <main class="shell">
+    <main class="app-shell">
+      <aside class="rail">
+        <div class="brand">
+          <div class="brand-mark">ER</div>
+          <div>
+            <p>Enterprise RAG</p>
+            <strong>Secure Intelligence</strong>
+          </div>
+        </div>
+
+        <section class="rail-section">
+          <div class="section-label">Identity</div>
+          <label class="user-picker">
+            <span>Active user</span>
+            <select id="userSelect"></select>
+          </label>
+          <div class="identity-card">
+            <strong id="selectedUserName">Loading users</strong>
+            <span id="selectedUserDept">Waiting for seed data</span>
+            <div id="selectedUserRoles" class="role-chips"></div>
+          </div>
+        </section>
+
+        <section class="rail-section">
+          <div class="section-label">Retrieval Paths</div>
+          <div class="path-list">
+            <div><span></span>Documents</div>
+            <div><span></span>SQL Records</div>
+            <div><span></span>Logs</div>
+            <div><span></span>Audits</div>
+          </div>
+        </section>
+
+        <section class="rail-section policy-box">
+          <div class="section-label">Access Policy</div>
+          <p>Pre-prompt filtering active. Scope is limited by tenant and effective roles.</p>
+        </section>
+      </aside>
+
       <section class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Enterprise RAG Intelligence</p>
-            <h1>Secure multi-source assistant</h1>
+            <p class="eyebrow">Context-aware assistant</p>
+            <h1>Ask across documents, records, logs, and audits.</h1>
           </div>
-          <label class="user-picker">
-            <span>User</span>
-            <select id="userSelect"></select>
-          </label>
+          <div class="system-state">
+            <span></span>
+            <strong>RBAC enforced</strong>
+          </div>
         </header>
 
-        <section class="query-panel">
+        <section class="query-card">
           <form id="queryForm">
+            <div class="query-head">
+              <label for="question">Question</label>
+              <span id="queryHint">Ready</span>
+            </div>
             <textarea
               id="question"
-              rows="4"
-              placeholder="Ask about finance records, security logs, audit changes, or policy documents..."
+              rows="5"
+              placeholder="Ask a question about authorized enterprise knowledge..."
             ></textarea>
             <div class="actions">
-              <button type="button" class="ghost" data-example="Which reports mention access control exceptions?">Docs</button>
-              <button type="button" class="ghost" data-example="Count authorized records by status">SQL</button>
-              <button type="button" class="ghost" data-example="Show recent security alerts for payment services">Logs</button>
-              <button type="button" class="ghost" data-example="Who changed vendor access policies?">Audit</button>
-              <button type="submit" id="askButton">Ask</button>
+              <div class="example-grid">
+                <button type="button" class="example" data-example="Which reports mention access control exceptions?">
+                  <span>Docs</span>
+                  <strong>Access control exceptions</strong>
+                </button>
+                <button type="button" class="example" data-example="Count authorized records by status">
+                  <span>SQL</span>
+                  <strong>Records by status</strong>
+                </button>
+                <button type="button" class="example" data-example="Show recent security alerts for payment services">
+                  <span>Logs</span>
+                  <strong>Payment alerts</strong>
+                </button>
+                <button type="button" class="example" data-example="Who changed vendor access policies?">
+                  <span>Audit</span>
+                  <strong>Policy changes</strong>
+                </button>
+              </div>
+              <button type="submit" id="askButton" class="ask-button">
+                <span class="button-dot"></span>
+                Ask
+              </button>
             </div>
           </form>
         </section>
 
-        <section class="answer-grid">
+        <section class="result-layout">
           <article class="answer-panel">
             <div class="panel-header">
-              <h2>Answer</h2>
-              <span id="routeBadge">idle</span>
+              <div>
+                <p>Grounded Response</p>
+                <h2>Answer</h2>
+              </div>
+              <span id="routeBadge" class="metric-pill">idle</span>
             </div>
-            <pre id="answer">Ingest data, choose a user, and ask a question.</pre>
+            <div id="answer" class="answer-text">Choose a user and ask a question to retrieve authorized context.</div>
           </article>
 
           <aside class="trace-panel">
             <div class="panel-header">
-              <h2>Trace</h2>
-              <span id="confidence">0.00</span>
+              <div>
+                <p>Trace</p>
+                <h2>Decision</h2>
+              </div>
+              <span id="confidence" class="metric-pill">0.00</span>
             </div>
-            <dl>
-              <dt>User</dt>
-              <dd id="traceUser">-</dd>
-              <dt>Roles</dt>
-              <dd id="traceRoles">-</dd>
-              <dt>Router</dt>
-              <dd id="traceRoute">-</dd>
-            </dl>
+            <div class="trace-stack">
+              <div class="trace-item">
+                <span>User</span>
+                <strong id="traceUser">-</strong>
+              </div>
+              <div class="trace-item">
+                <span>Roles</span>
+                <strong id="traceRoles">-</strong>
+              </div>
+              <div class="trace-item">
+                <span>Router</span>
+                <strong id="traceRoute">-</strong>
+              </div>
+            </div>
           </aside>
         </section>
 
         <section class="sources-panel">
           <div class="panel-header">
-            <h2>Authorized Sources</h2>
-            <span id="sourceCount">0</span>
+            <div>
+              <p>Evidence</p>
+              <h2>Authorized Sources</h2>
+            </div>
+            <span id="sourceCount" class="metric-pill">0</span>
           </div>
-          <div id="sources" class="sources"></div>
+          <div id="sources" class="sources empty-sources">
+            <div class="empty-card">No sources retrieved yet.</div>
+          </div>
         </section>
       </section>
     </main>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js" onerror="this.onerror=null;this.src='./app.js';"></script>
   </body>
 </html>
